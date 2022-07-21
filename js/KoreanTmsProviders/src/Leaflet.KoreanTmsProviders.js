@@ -144,7 +144,7 @@
 	L.TileLayer.KoreaProvider.providers = {
 		//다음지도 Tile URL
 		DaumMap: {
-			url: 'http://map{s}.daumcdn.net/map_2d/1807hsm/L{z}/{y}/{x}.png',
+			url: 'http://map{s}.daumcdn.net/map_2d/2205pfk/L{z}/{y}/{x}.png',
 			crs: L.Proj.CRS.Daum,
 			options: {
 				maxZoom: 13, 
