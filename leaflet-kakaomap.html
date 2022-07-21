@@ -1,0 +1,96 @@
+<html>
+
+<head>
+	<!-- Mobile 화면 : Viewport 설정 -->
+	<meta http-equiv="Content-Type" content="text/html;charset=utf-8">
+	<meta name="viewport" content="user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, width=device-width">
+	<meta name="robots" content="noindex">
+	<meta name="format-detection" content="telephone=no">
+
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/leaflet.css"
+		integrity="sha512-xodZBNTC5n17Xt2atTPuE1HxjVMSvLVW9ocqUKLsCC5CXdbqCmblAshOMAS6/keqq/sMZMZ19scR4PsZChSR7A=="
+		crossorigin="anonymous" />
+	<script src="https://d3js.org/d3.v5.min.js" charset="utf-8"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.4.0/leaflet.js"></script>
+	<script src="https://d3js.org/d3-hexbin.v0.2.min.js"></script>
+	<script src="https://unpkg.com/@asymmetrik/leaflet-d3@4/dist/leaflet-d3.js" charset="utf-8"></script>
+
+	<!-- Custom Script -->
+	<script src="js/leaflet.geometryutil.js"></script>
+	<script src="js/KoreanTmsProviders/lib/proj4.js"></script>
+	<script src="js/KoreanTmsProviders/lib/proj4leaflet.js"></script>
+	<script src="js/KoreanTmsProviders/src/Leaflet.KoreanTmsProviders.js"></script>  
+
+	<link rel="stylesheet" href="css/main.css"/>
+
+</head>
+
+<body>
+	<!-- 배경지도 영역 추가하기-->
+	<div id="map" class="map"></div>
+	<script>
+		var map = new L.Map('map', {
+			  center: new L.LatLng(36.1358642, 128.0785804), //중심점 : 김천 위경도 좌표
+			  zoom: 7,	//Leaflet.KoreanTmsProviders.js : resolutions기준 줌 레벨(Level 12)
+			  crs: L.Proj.CRS.Daum, //Leaflet.KoreanTmsProviders.js : 새로 정의된 Daum Map CRS
+			  worldCopyJump: false,  //https://leafletjs.com/reference-1.3.2.html#map-worldcopyjump 참조    
+		});
+		var baseLayers = L.tileLayer.koreaProvider('DaumMap.Street').addTo(map);
+
+		// 샘플 데이터 생성해서 뿌리는 영역 
+
+		var hexLayer = L.hexbinLayer({ duration: 200, radius: 48, radiusRange:[24,48] , opacity:0.3, colorRange:['#ffffff', '#ff0000']})
+			.hoverHandler(L.HexbinHoverHandler.compound({
+				handlers: [
+					L.HexbinHoverHandler.resizeFill(),
+					L.HexbinHoverHandler.tooltip()
+				]
+			}));
+
+		hexLayer.addTo(map);
+
+		// Set up events
+		hexLayer.dispatch()
+			.on('click', function (d, i) {
+				console.log({ type: 'click', event: d, index: i, context: this });
+			});
+
+
+		map.on('load moveend', function() {
+			var mapBoundary = map.getBounds();
+			ne = mapBoundary.getNorthEast();
+			sw = mapBoundary.getSouthWest();
+			nw = mapBoundary.getNorthWest();
+			se = mapBoundary.getSouthEast();
+			diagonal = ne.distanceTo(sw);
+			gridsize = diagonal / 100;
+			
+			var d = 2*gridsize*Math.cos(Math.PI / 6);
+			point = new L.LatLng(ne.lat, sw.lng);
+			data = []
+			while(point.lat > sw.lat){
+				leftPoint = new L.GeometryUtil.destination(L.GeometryUtil.destination(L.GeometryUtil.destination(L.GeometryUtil.destination(point, 150, d), 210, d), 270, d), 90, d);
+				step = 1;
+				while(point.lng < ne.lng){
+					if (step % 2 === 0){
+						point = new L.GeometryUtil.destination(point, 30, d);
+					} else {
+						point = new L.GeometryUtil.destination(point, 150, d);
+					}
+					step++;
+					// console.log('2point',point)
+					for (var i = 0; i < Math.floor(Math.random()*10); i++){
+						data.push([point.lng, point.lat]);
+					}
+					// console.log(point.lat, point.lng);
+				}
+				point = leftPoint;
+			}
+
+			hexLayer.data(data);
+		})
+
+	</script>
+</body>
+
+</html>
